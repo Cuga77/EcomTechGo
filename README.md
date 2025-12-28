@@ -19,3 +19,6 @@ docker-compose up --build
 - `GET /todos/{id}` — задача по ID
 - `PUT /todos/{id}` — обновить задачу
 - `DELETE /todos/{id}` — удалить задачу
+
+---
+***Фичи в отдельной ветке***
