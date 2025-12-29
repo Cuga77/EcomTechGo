@@ -4,7 +4,8 @@ import (
 	"EcomTechGo/internal/store"
 	"EcomTechGo/internal/transport/rest"
 	"context"
-	"log"
+	"flag"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,13 +13,25 @@ import (
 	"time"
 )
 
+var persistFile string
+
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	flag.StringVar(&persistFile, "file", "todos.json", "Path to persistence file")
+	flag.Parse()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"
 	}
 
 	storage := store.New()
+	if err := storage.Load(persistFile); err != nil {
+		slog.Error("failed to load store", "file", persistFile, "error", err)
+	}
+
 	handler := rest.NewHandler(storage)
 
 	srv := &http.Server{
@@ -27,23 +40,25 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("Server is starting on port :%s...", port)
+		slog.Info("Server is starting", "port", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			slog.Error("listen failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, os.Interrupt)
 	<-quit
-	log.Println("Shutting down server...")
+	slog.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown: ", err)
+		slog.Error("Server forced to shutdown", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Server exiting")
+	slog.Info("Server exiting")
 }

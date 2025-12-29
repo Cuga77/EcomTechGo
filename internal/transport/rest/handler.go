@@ -5,6 +5,7 @@ import (
 	"EcomTechGo/internal/store"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,6 +30,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.s.Create(r.Context(), &todo); err != nil {
+		slog.Error("failed to create todo", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -38,6 +40,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	newEncoder := json.NewEncoder(w)
 	if err := newEncoder.Encode(&todo); err != nil {
+		slog.Error("failed to encode response", "error", err)
 		http.Error(w, "BadResponse", http.StatusBadRequest)
 		return
 	}
@@ -54,6 +57,7 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	encodeTodos := json.NewEncoder(w)
 	if err := encodeTodos.Encode(&todos); err != nil {
+		slog.Error("failed to encode response", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -79,6 +83,7 @@ func (h *Handler) GetOne(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(todo); err != nil {
+		slog.Error("failed to encode response", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -132,6 +137,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(todo); err != nil {
+		slog.Error("failed to encode response", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
